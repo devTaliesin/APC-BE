@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model VideoSource {
+  id Int @default(autoincrement()) @id
+
+  onvif String @unique
+  name String?
+  rtsp String?
+
+  events Event[]
+}
+
+model Face {
+  id Int @default(autoincrement()) @id
+  
+  embeddedFace String @unique
+  events Event[]
+}
+
+model Event {
+  id Int @default(autoincrement()) @id
+  videoId Int
+  faceId Int
+
+  datetime DateTime
+  cropImage String
+  inandout Inandout?
+  sex Sex?
+  face Face @relation(fields: [faceId], references: [id])
+  video VideoSource @relation(fields: [videoId], references: [id])
+
+  @@index([datetime])
+  @@index([datetime, videoId])
+  @@index([datetime, faceId])
+}
+
+enum Inandout {
+  IN
+  OUT
+}
+
+enum Sex {
+  MAN
+  WOMAN
+}
