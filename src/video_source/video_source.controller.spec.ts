@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OnvifDeviceController } from './onvif-device.controller';
-import { OnvifDeviceService } from './onvif-device.service';
+import { VideoSourceController } from './video_source.controller';
+import { VideoSourceCreateService } from './video_source-create/video_source-create.service';
 
 describe('OnvifDeviceController', () => {
-  let controller: OnvifDeviceController;
-  let service: OnvifDeviceService;
+  let controller: VideoSourceController;
+  let service: VideoSourceCreateService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [OnvifDeviceController],
+      controllers: [VideoSourceController],
       providers: [
         {
-          provide: OnvifDeviceService,
+          provide: VideoSourceCreateService,
           useValue: {
             connectToDevice: jest.fn(),
             getConnectedDevices: jest.fn(),
@@ -20,8 +20,8 @@ describe('OnvifDeviceController', () => {
       ],
     }).compile();
 
-    controller = module.get<OnvifDeviceController>(OnvifDeviceController);
-    service = module.get<OnvifDeviceService>(OnvifDeviceService);
+    controller = module.get<VideoSourceController>(VideoSourceController);
+    service = module.get<VideoSourceCreateService>(VideoSourceCreateService);
   });
 
   it('should be defined', () => {
@@ -30,7 +30,7 @@ describe('OnvifDeviceController', () => {
 
   describe('connectToDevice', () => {
     it('should call OnvifDeviceService.connectToDevice with correct parameters', async () => {
-      const connectToDeviceSpy = jest.spyOn(service, 'connectToDevice').mockResolvedValue({
+      const connectToDeviceSpy = jest.spyOn(service, 'createVideoSource').mockResolvedValue({
         id: 1,
         onvif: '192.168.0.143:80',
         name: 'test',
@@ -45,18 +45,6 @@ describe('OnvifDeviceController', () => {
         name: 'test',
         rtsp: 'rtsp://192.168.0.143:554/cam/realmonitor?channel=1&subtype=0&unicast=true&proto=Onvif',
       });
-    });
-  });
-
-  describe('getConnectedDevices', () => {
-    it('should return the connected devices from OnvifDeviceService', () => {
-      const mockDevices = [
-        { id: 1, onvif: '192.168.0.143:80', name: 'test', rtsp: 'rtsp://192.168.0.143:554/stream' },
-      ];
-
-      jest.spyOn(service, 'getConnectedDevices').mockReturnValue(mockDevices);
-
-      expect(controller.getConnectedDevices()).toEqual(mockDevices);
     });
   });
 });

@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { OnvifDeviceService } from './onvif-device.service';
+import { EventCreateService } from './event-create.service';
 
-describe('OnvifDeviceService', () => {
-  let service: OnvifDeviceService;
+describe('EventCreateService', () => {
+  let service: EventCreateService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OnvifDeviceService],
+      providers: [EventCreateService],
     }).compile();
 
-    service = module.get<OnvifDeviceService>(OnvifDeviceService);
+    service = module.get<EventCreateService>(EventCreateService);
   });
 
   it('should be defined', () => {

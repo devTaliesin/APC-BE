@@ -1,16 +1,22 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-// import { WebsocketModule } from './websocket/websocket.module';
 import { WebsocketGateway } from './websocket/websocket.gateway';
-import { OnvifDeviceService } from './onvif-device/onvif-device.service';
-import { OnvifDeviceController } from './onvif-device/onvif-device.controller';
+import { VideoSourceCreateService } from './video_source/video_source-create/video_source-create.service';
+import { VideoSourceController } from './video_source/video_source.controller';
 import { PrismaService } from './prisma/prisma.service';
+import { EventController } from './event/event.controller';
+import { EventUpdateService } from './event/event-update/event-update.service';
+import { EventReadService } from './event/event-read/event-read.service';
+import { EventCreateService } from './event/event-create/event-create.service';
+// import { WebsocketModule } from './websocket/websocket.module';
 // import { PrismaModule } from './prisma/prisma.module';
+import { VideoSourceReadService } from './video_source/video_source-read/video_source-read.service';
+import { MediasoupService } from './mediasoup/mediasoup.service';
 
 @Module({
   // imports: [WebsocketModule, PrismaModule],
-  controllers: [AppController, OnvifDeviceController],
-  providers: [AppService, WebsocketGateway, OnvifDeviceService, PrismaService],
+  controllers: [AppController, VideoSourceController, EventController],
+  providers: [AppService, WebsocketGateway, VideoSourceCreateService, PrismaService, EventUpdateService, EventReadService, EventCreateService, VideoSourceReadService, MediasoupService],
 })
 export class AppModule {}

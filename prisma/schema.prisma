@@ -13,6 +13,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+generator nestjsDto {
+  provider = "prisma-generator-nestjs-dto"
+  output   = "./dto" // 원하는 경로로 설정
+}
+
 model VideoSource {
   id Int @default(autoincrement()) @id
 
@@ -32,15 +37,16 @@ model Face {
 
 model Event {
   id Int @default(autoincrement()) @id
-  videoId Int
-  faceId Int
 
-  datetime DateTime
+  videoId Int
+  datetime DateTime @default(now())
   cropImage String
+  video VideoSource @relation(fields: [videoId], references: [id])
+
+  faceId Int?
   inandout Inandout?
   sex Sex?
-  face Face @relation(fields: [faceId], references: [id])
-  video VideoSource @relation(fields: [videoId], references: [id])
+  face Face? @relation(fields: [faceId], references: [id])
 
   @@index([datetime])
   @@index([datetime, videoId])
