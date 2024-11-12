@@ -13,7 +13,7 @@ async function bootstrap() {
   }
   
   app.enableCors(corsOptions)
-  app.useWebSocketAdapter(new IoAdapter(app));
+  // app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.listen(process.env.RUN_PORT ?? 3000);
 }

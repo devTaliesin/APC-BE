@@ -1,0 +1,9 @@
+-- DropForeignKey
+ALTER TABLE `Event` DROP FOREIGN KEY `Event_faceId_fkey`;
+
+-- AlterTable
+ALTER TABLE `Event` MODIFY `faceId` INTEGER NULL,
+    MODIFY `datetime` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
+
+-- AddForeignKey
+ALTER TABLE `Event` ADD CONSTRAINT `Event_faceId_fkey` FOREIGN KEY (`faceId`) REFERENCES `Face`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

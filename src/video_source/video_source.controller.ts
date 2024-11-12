@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, HttpStatus, Res } from '@nestjs/common';
 import { VideoSourceCreateService } from './video_source-create/video_source-create.service';
 import { VideoSourceReadService } from './video_source-read/video_source-read.service';
+import { Response } from 'express';
 
 @Controller('video_source')
 export class VideoSourceController {
@@ -29,7 +30,21 @@ export class VideoSourceController {
   }
 
   @Get('read')
-  getConnectedDevices() {
-    return this.videoSourceReadService.readVideoSource();
+  async readBVideoSource(@Res() res: Response) {
+    try {
+      const videoSourceInfo = await this.videoSourceReadService.readVideoSource();
+
+      if (videoSourceInfo.length === 0) {
+        return res
+          .status(HttpStatus.NO_CONTENT)
+          .json({ message: 'No video source found' });
+      }
+
+      return res.status(HttpStatus.OK).json(videoSourceInfo);
+    } catch (error) {
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: error.message });
+    }
   }
 }
