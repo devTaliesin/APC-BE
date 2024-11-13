@@ -16,7 +16,7 @@ export class VideoSourceService {
   private videoSourceEvents$ = new Subject<VideoSourceDto[]>();
   private readonly logger = new Logger(VideoSourceService.name);
 
-  async createVideoSource(createVideoSourceDto: CreateVideoSourceDto): Promise<VideoSourceDto[]> {
+  async createVideoSource(createVideoSourceDto: CreateVideoSourceDto): Promise<VideoSourceDto> {
     const device = new OnvifDevice({
       xaddr: `http://${createVideoSourceDto.onvif}/onvif/device_service`,  // ONVIF 장치의 서비스 주소
       user : createVideoSourceDto.user,
@@ -33,18 +33,14 @@ export class VideoSourceService {
           rtsp: rtspUrl.replace('rtsp://', `rtsp://${createVideoSourceDto.user}:${createVideoSourceDto.pass}@`),
         };
         try {
-          const allDevice = await this.prisma.$transaction( async (prisma) => {
-            await prisma.videoSource.
-            upsert({
+          const createdVideoSource = await this.prisma.videoSource.upsert({
               where: { onvif: deviceInfo.onvif },
               update: deviceInfo,
               create: deviceInfo,
-            });
-
-            return await prisma.videoSource.findMany()
-          })
-          this.emitEvent(allDevice);
-          return allDevice;
+          });
+          const allVideoSource = await this.readVideoSource()
+          this.emitEvent(allVideoSource);
+          return createdVideoSource;
         } catch (error) {
           this.logger.error(error)
           handleDatabaseException(error);

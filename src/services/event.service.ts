@@ -6,6 +6,7 @@ import { UpdateEventDto } from "src/dto/update/update-event.dto";
 import { Subject } from "rxjs";
 import { EventDto } from "src/dto/event.dto";
 import { handleDatabaseException } from "src/exceptions/database.exception";
+import { EventSseSubjectInterface } from "src/intserfaces/event.interface";
 
 @Injectable()
 export class EventService {
@@ -13,7 +14,7 @@ export class EventService {
     private prisma: PrismaService
   ){}
 
-  private EventEvents$ = new Subject();
+  private EventEvents$ = new Subject<EventSseSubjectInterface>();
   private readonly logger = new Logger(EventService.name);
 
   async createEventData(createEventDto: CreateEventDto): Promise<EventDto> {
@@ -24,10 +25,13 @@ export class EventService {
           cropImage: createEventDto.cropImage
         }
       })
+      const readDailyVideoEvent = await this.readDailyVideoEventData(createEventDto.video.id)
+      this.emitEvent({readDailyVideoEvent})
       return createdData
     } catch (error) {
+      this.logger.error(error)
       handleDatabaseException(error)
-    }   
+    } 
   }
 
   async readDailyVideoEventData(videoId:number): Promise<EventDto[]>{
@@ -43,6 +47,7 @@ export class EventService {
       });
       return readEvent
     } catch (error) {
+      this.logger.error(error)
       handleDatabaseException(error)
     }
   }
@@ -60,6 +65,7 @@ export class EventService {
       });
       return readEvent
     } catch (error) {
+      this.logger.error(error)
       handleDatabaseException(error)
     }
   }
@@ -76,8 +82,12 @@ export class EventService {
           sex: updateEventDto.sex
         }
       })
+      const readDailyVideoEvent = await this.readDailyVideoEventData(updateEventDto.face.id)
+      const readDailyFaceIdEvent = await this.readDailyFaceIdEventData(updatedData.faceId)
+      this.emitEvent({readDailyVideoEvent, readDailyFaceIdEvent})
       return updatedData
     } catch (error) {
+      this.logger.error(error)
       handleDatabaseException(error)
     }   
   }
@@ -86,7 +96,7 @@ export class EventService {
     return this.EventEvents$.asObservable();
   }
 
-  emitEvent(allDevice: EventDto[]) {
-    this.EventEvents$.next(allDevice);
+  emitEvent(readData: EventSseSubjectInterface) {
+    this.EventEvents$.next(readData);
   }
 }
