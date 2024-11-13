@@ -13,7 +13,7 @@ export class VideoSourceService {
     private prisma: PrismaService,
   ) {}
   
-  private videoSourceEvents$ = new Subject();
+  private videoSourceEvents$ = new Subject<VideoSourceDto[]>();
   private readonly logger = new Logger(VideoSourceService.name);
 
   async createVideoSource(createVideoSourceDto: CreateVideoSourceDto): Promise<VideoSourceDto[]> {
@@ -68,11 +68,12 @@ export class VideoSourceService {
     }
   }
 
-  async subscribeEvent() {
-    return this.videoSourceEvents$.asObservable();
+  subscribeEvent() {
+    return  this.videoSourceEvents$.asObservable();
   }
 
-  async emitEvent(allDevice: VideoSourceDto[]) {
+  emitEvent(allDevice: VideoSourceDto[]) {
     this.videoSourceEvents$.next(allDevice);
   }
+  
 }

@@ -1,17 +1,14 @@
 import { Controller, Post, Get, HttpStatus, Res, Req, Body } from '@nestjs/common';
-import { VideoSourceCreateService } from './video_source-create/video_source-create.service';
-import { VideoSourceReadService } from './video_source-read/video_source-read.service';
-import { CreateVideoSourceDto } from './dto/create-video-source.dto';
 import { Response } from 'express';
-import { OnvifConnectionError, OnvifAuthenticationError, DatabaseError } from './video_source.errors';
-import { VideoSourceSseService } from './video_source-sse/video_source-sse.service';
+import { CreateVideoSourceDto } from 'src/dto/create/create-videoSource.dto';
+import { VideoSourceService } from 'src/services/video_source.service';
+
+
 
 @Controller('video_source')
 export class VideoSourceController {
   constructor(
-    private readonly videoSourceCreateService: VideoSourceCreateService,
-    private readonly videoSourceReadService: VideoSourceReadService,
-    private readonly videoSourceSseService: VideoSourceSseService
+    private readonly videoSourceService: VideoSourceService,
   ) {}
 
   @Post('create')
@@ -19,41 +16,25 @@ export class VideoSourceController {
     @Body() createVideoSourceDto: CreateVideoSourceDto,
     @Res() res:Response
   ) {
-    if (!createVideoSourceDto.ip||!createVideoSourceDto.name||!createVideoSourceDto.port||!createVideoSourceDto.user||!createVideoSourceDto.pass) {
+    if (!createVideoSourceDto.rtsp||!createVideoSourceDto.user||!createVideoSourceDto.pass) {
       return res
         .status(HttpStatus.BAD_REQUEST)
         .json({ error: 'Invalid input data' });
     }
     try {
-      const device = await this.videoSourceCreateService.createVideoSource(createVideoSourceDto);
+      const device = await this.videoSourceService.createVideoSource(createVideoSourceDto);
       return res
         .status(HttpStatus.CREATED)
         .json(device);
     } catch (error) {
-      if (error instanceof OnvifConnectionError) {
-        return res
-        .status(HttpStatus.BAD_GATEWAY)
-        .json({ error: error.message });
-      } else if (error instanceof OnvifAuthenticationError) {
-        return res
-        .status(HttpStatus.UNAUTHORIZED)
-        .json({ error: error.message });
-      } else if (error instanceof DatabaseError) {
-        return res
-        .status(HttpStatus.SERVICE_UNAVAILABLE)
-        .json({ error: error.message });
-      } else {
-        return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: error.message });
-      };
+      
     }
   }
 
   @Get('read')
   async readBVideoSource(@Res() res: Response) {
     try {
-      const videoSourceInfo = await this.videoSourceReadService.readVideoSource();
+      const videoSourceInfo = await this.videoSourceService.readVideoSource();
 
       if (videoSourceInfo.length === 0) {
         return res
@@ -76,11 +57,11 @@ export class VideoSourceController {
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
 
-    const subscription = this.videoSourceSseService
-      .getVideoSourceEvents()
+    const subscription = this.videoSourceService
+      .subscribeEvent()
       .subscribe((data) => {
         res.write(`data: ${JSON.stringify(data)}\n\n`);
-      });
+    });
 
     res.on('close', () => {
       subscription.unsubscribe();
