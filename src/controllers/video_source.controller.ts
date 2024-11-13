@@ -1,4 +1,4 @@
-import { Controller, Post, Get, HttpStatus, Res, Req, Body } from '@nestjs/common';
+import { Controller, Post, Get, HttpStatus, Res, Body } from '@nestjs/common';
 import { Response } from 'express';
 import { CreateVideoSourceDto } from 'src/dto/create/create-videoSource.dto';
 import { VideoSourceService } from 'src/services/video_source.service';
@@ -27,7 +27,7 @@ export class VideoSourceController {
         .status(HttpStatus.CREATED)
         .json(device);
     } catch (error) {
-      
+
     }
   }
 

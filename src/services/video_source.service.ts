@@ -5,7 +5,7 @@ import { OnvifDevice } from 'node-onvif-ts';
 import { OnvifAuthenticationException, OnvifConnectionException } from 'src/exceptions/video_source.exception';
 import { VideoSourceDto } from 'src/dto/videoSource.dto';
 import { Subject } from 'rxjs';
-import { handleDatabaseException } from 'src/exceptions/databse.exception';
+import { handleDatabaseException } from 'src/exceptions/database.exception';
 
 @Injectable()
 export class VideoSourceService {

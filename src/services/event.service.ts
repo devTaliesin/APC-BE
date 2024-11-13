@@ -5,7 +5,7 @@ import { CreateEventDto } from "src/dto/create/create-event.dto";
 import { UpdateEventDto } from "src/dto/update/update-event.dto";
 import { Subject } from "rxjs";
 import { EventDto } from "src/dto/event.dto";
-import { handleDatabaseException } from "src/exceptions/databse.exception";
+import { handleDatabaseException } from "src/exceptions/database.exception";
 
 @Injectable()
 export class EventService {
@@ -82,11 +82,11 @@ export class EventService {
     }   
   }
 
-  async subscribeEvent() {
+  subscribeEvent() {
     return this.EventEvents$.asObservable();
   }
 
-  async emitEvent(allDevice: EventDto[]) {
+  emitEvent(allDevice: EventDto[]) {
     this.EventEvents$.next(allDevice);
   }
 }

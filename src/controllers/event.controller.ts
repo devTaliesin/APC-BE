@@ -1,79 +1,62 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
-import { EventReadService } from './event-read/event-read.service';
-import { EventUpdateService } from './event-update/event-update.service';
-import { EventCreateService } from './event-create/event-create.service';
-import { Inandout, Sex } from '@prisma/client';
-
-
+import { Controller, Post, Get, Body, Res } from '@nestjs/common';
+import { Response } from 'express';
+import { CreateEventDto } from 'src/dto/create/create-event.dto';
+import { EventDto } from 'src/dto/event.dto';
+import { UpdateEventDto } from 'src/dto/update/update-event.dto';
+import { EventService } from 'src/services/event.service';
 @Controller('event')
 export class EventController {
   constructor(
-    private readonly eventReadService: EventReadService,
-    private readonly eventUpdateService: EventUpdateService,
-    private readonly eventCreateService: EventCreateService
+    private readonly eventService: EventService,
   ) {}
 
   @Post('create')
   async eventCreate(
-    @Body('videoId') videoId: number,
-    @Body('cropImage') cropImage: string,
-  ) {
-    if (!videoId || !cropImage) {
-      return { error: 'videoId and cropImage is required' };
-    }
-    try {
-      const createdData = await this.eventCreateService.createEventData(videoId, cropImage);
-      return createdData;
-    } catch (error) {
-      return { error: `Failed to create event data ${videoId}`, details: error.message };
-    }
+    @Body() createEventDto: CreateEventDto,
+  ) :Promise<{data: EventDto}> {
+    const createdData = await this.eventService.createEventData(createEventDto);
+    return {data: createdData};
   }
 
   @Post('update')
   async eventUpdate(
-    @Body('id') id: number,
-    @Body('faceId') faceId: number,
-    @Body('inandout') inandout: Inandout,
-    @Body('sex') sex: Sex,
-  ) {
-    if (!faceId) { 
-      return { error: 'faceId is required' };
-    }
-    try {
-      const updatedData = await this.eventUpdateService.updateEventData(id, faceId, inandout, sex);
-      return updatedData;
-    } catch (error) {
-      return { error: `Failed to create event data ${faceId}`, details: error.message };
-    }
+    @Body() updateEventDto: UpdateEventDto,
+  ) :Promise<{data: EventDto}> {
+    const updatedData = await this.eventService.updateEventData(updateEventDto);
+    return {data: updatedData};
   }
 
   @Get('daily_video_read')
   async dailyVideoEventRead(
-    @Body('videoId') videoId:number, 
-  ) {
-    if ( !videoId ) { 
-      return { error: 'faceId is required' };
-    }
-    try {
-      const readDailyVideoData = await this.eventReadService.readDailyVideoEventData(videoId);
-      return readDailyVideoData;
-    } catch (error) {
-      return { error: `Failed to create event data ${videoId}`, details: error.message };
-    }
+    @Body() videoId:number, 
+  ) :Promise<{data: EventDto[]}> {
+    const readDailyVideoData = await this.eventService.readDailyVideoEventData(videoId);
+    return {data: readDailyVideoData};
   }
   
   @Get('daily_face_id_read')
   async dailyFaceIdEventRead(
-    @Body('faceId') faceId:number
-  ) {
-    if ( !faceId ) { 
-      return { error: 'faceId is required' };
-    }
-    try {
-      const readDailyFaceIdData = await this.eventReadService.readDailyFaceIdEventData(faceId);
-      return readDailyFaceIdData;
-    } catch (error) {
-      return { error: `Failed to create event data ${faceId}`, details: error.message };
-    }
+    @Body() faceId:number
+  ) :Promise<{data: EventDto[]}> {
+    const readDailyFaceIdData = await this.eventService.readDailyFaceIdEventData(faceId);
+    return {data: readDailyFaceIdData};
+  }
+
+  @Get('sse')
+  async sendVideoSourceEvents(@Res() res: Response) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const subscription = this.eventService
+      .subscribeEvent()
+      .subscribe((data) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    });
+
+    res.on('close', () => {
+      subscription.unsubscribe();
+    });
   }
 }
