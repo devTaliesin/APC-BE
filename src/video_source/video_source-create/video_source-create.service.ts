@@ -1,56 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OnvifDevice } from 'node-onvif-ts';
+import { CreateVideoSourceDto } from '../dto/create-video-source.dto'
+import { OnvifConnectionError, OnvifAuthenticationError, DatabaseError } from '../video_source.errors';
+import { VideoSourceSseService } from '../video_source-sse/video_source-sse.service';
 
 @Injectable()
 export class VideoSourceCreateService {
-  private connectedDevices: any[] = [];
+  
+  constructor(
+    private prisma: PrismaService,
+    private readonly videoSourceSseService: VideoSourceSseService
+  ) {}
+  
+  private readonly logger = new Logger(VideoSourceCreateService.name);
 
-  constructor(private prisma: PrismaService) {}
-
-  // 특정 IP의 ONVIF 장치에 연결하는 메서드
-  async createVideoSource(ip: string, name:string, port: number = 80, user: string = 'admin', pass: string = 'password'): Promise<any> {
-    return new Promise((resolve, reject) => {
+  async createVideoSource(createVideoSourceDto: CreateVideoSourceDto): Promise<any> {
+    return new Promise( async (resolve, reject) => {
+      this.logger.log(createVideoSourceDto)
       const device = new OnvifDevice({
-        xaddr: `http://${ip}:${port}/onvif/device_service`,  // ONVIF 장치의 서비스 주소
-        user,
-        pass
+        xaddr: `http://${createVideoSourceDto.ip}:${createVideoSourceDto.port}/onvif/device_service`,  // ONVIF 장치의 서비스 주소
+        user : createVideoSourceDto.user,
+        pass : createVideoSourceDto.pass
       });
 
-      device.init()
-        .then(async() => {
-          console.log(`Connected to ONVIF device at ${ip}`);
-          const rtspUrl = await this.getRtspUrl(device);
-
+      try {
+        await device.init()
+        try {
+          const rtspUrl = device.getUdpStreamUrl();
+          this.logger.log(device.getInformation())
           const deviceInfo = {
-            onvif: `${ip}:${port}`,
-            name: name || 'Unknown Model', // 이름을 컨트롤러에서 받아옴
-            rtsp: rtspUrl.replace('rtsp://', `rtsp://${user}:${pass}@`),
+            onvif: `${createVideoSourceDto.ip}:${createVideoSourceDto.port}`,
+            name: createVideoSourceDto.name || 'Unknown Model',
+            rtsp: rtspUrl.replace('rtsp://', `rtsp://${createVideoSourceDto.user}:${createVideoSourceDto.pass}@`),
           };
-
-          const updatedDevice = await this.prisma.videoSource.upsert({
-            where: { onvif: ip },
-            update: deviceInfo,
-            create: deviceInfo,
-          });
-
-          this.connectedDevices.push(updatedDevice);
-          resolve(updatedDevice);
-        })
-        .catch((err) => {
-          console.error(`Failed to connect to ONVIF device at ${ip}:`, err);
-          reject(err);
-        });
+          this.logger.log(deviceInfo)
+          try {
+            const allDevice = await this.prisma.$transaction([
+              this.prisma.videoSource.
+              upsert({
+                where: { onvif: deviceInfo.onvif },
+                update: deviceInfo,
+                create: deviceInfo,
+              }),
+              this.prisma.videoSource.findMany()
+            ])
+            this.videoSourceSseService.emitEvent(allDevice);
+            resolve(allDevice);
+          } catch (err) {
+            this.logger.error(err)
+            return reject(new DatabaseError(err));
+          }
+        } catch (err) {
+          this.logger.error(err)
+          return reject(new OnvifAuthenticationError(err));
+        }
+      } catch (err) {
+        this.logger.error(err)
+        return reject(new OnvifConnectionError(err));
+      }
     });
   }
 
-  private async getRtspUrl(device: OnvifDevice): Promise<string> {
-    try {
-      const url = device.getUdpStreamUrl();
-      return url
-    } catch (error) {
-      console.error('Failed to retrieve RTSP URL:', error);
-      throw new Error('Unable to get RTSP stream URL');
-    }
-  }
+  // private async getRtspUrl(device: OnvifDevice): Promise<string> {
+  //   try {
+  //     const url = device.getUdpStreamUrl();
+  //     return url
+  //   } catch (error) {
+  //     console.error('Failed to retrieve RTSP URL:', error);
+  //     throw new Error('Unable to get RTSP stream URL');
+  //   }
+  // }
 }

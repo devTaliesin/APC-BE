@@ -13,10 +13,11 @@ import { EventCreateService } from './event/event-create/event-create.service';
 // import { PrismaModule } from './prisma/prisma.module';
 import { VideoSourceReadService } from './video_source/video_source-read/video_source-read.service';
 import { MediasoupService } from './mediasoup/mediasoup.service';
+import { VideoSourceSseService } from './video_source/video_source-sse/video_source-sse.service';
 
 @Module({
   // imports: [WebsocketModule, PrismaModule],
   controllers: [AppController, VideoSourceController, EventController],
-  providers: [AppService, WebsocketGateway, VideoSourceCreateService, PrismaService, EventUpdateService, EventReadService, EventCreateService, VideoSourceReadService, MediasoupService],
+  providers: [AppService, WebsocketGateway, VideoSourceCreateService, PrismaService, EventUpdateService, EventReadService, EventCreateService, VideoSourceReadService, MediasoupService, VideoSourceSseService],
 })
 export class AppModule {}

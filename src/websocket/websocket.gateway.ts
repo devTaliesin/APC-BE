@@ -133,7 +133,7 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
   }
 
   async handleConnection(client: Socket) {
-
+    
   }
 
   async handleDisconnect(client: Socket) {
