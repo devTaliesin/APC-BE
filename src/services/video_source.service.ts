@@ -22,6 +22,7 @@ export class VideoSourceService {
       user : createVideoSourceDto.user,
       pass : createVideoSourceDto.pass
     });
+    this.logger.debug( JSON.stringify(createVideoSourceDto) )
     try {
       await device.init()
       try {

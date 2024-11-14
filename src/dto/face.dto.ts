@@ -9,6 +9,7 @@ export class FaceDto {
     format: `int32`,
   })
   id: number ;
-
+  
+  @ApiProperty()
   embeddedFace: string ;
 }

@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Res } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiBody } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CreateEventDto } from 'src/dto/create/create-event.dto';
 import { EventDto } from 'src/dto/event.dto';
@@ -10,7 +11,11 @@ export class EventController {
     private readonly eventService: EventService,
   ) {}
 
+
   @Post('create')
+  @ApiBody({ 
+    type: CreateEventDto,
+  })
   async eventCreate(
     @Body() createEventDto: CreateEventDto,
   ) :Promise<{data: EventDto}> {
@@ -19,6 +24,9 @@ export class EventController {
   }
 
   @Post('update')
+  @ApiBody({ 
+    type: UpdateEventDto,
+  })
   async eventUpdate(
     @Body() updateEventDto: UpdateEventDto,
   ) :Promise<{data: EventDto}> {
@@ -28,7 +36,7 @@ export class EventController {
 
   @Get('daily_video_read')
   async dailyVideoEventRead(
-    @Body() videoId:number, 
+    @Query('videoId', ParseIntPipe) videoId: number, 
   ) :Promise<{data: EventDto[]}> {
     const readDailyVideoData = await this.eventService.readDailyVideoEventData(videoId);
     return {data: readDailyVideoData};
@@ -36,7 +44,7 @@ export class EventController {
   
   @Get('daily_face_id_read')
   async dailyFaceIdEventRead(
-    @Body() faceId:number
+    @Query('faceId', ParseIntPipe) faceId: number
   ) :Promise<{data: EventDto[]}> {
     const readDailyFaceIdData = await this.eventService.readDailyFaceIdEventData(faceId);
     return {data: readDailyFaceIdData};

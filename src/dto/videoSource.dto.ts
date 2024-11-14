@@ -6,7 +6,13 @@ export class VideoSourceDto {
   format: `int32`,
   })
   id: number ;
+
+  @ApiProperty()
   onvif: string ;
+
+  @ApiProperty()
   name: string  | null;
+
+  @ApiProperty()
   rtsp: string  | null;
 }

@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsString, ValidateNested } from 'class-validator';
 import { DtlsParametersDto, RtpCapabilitiesDto, RtpParametersDto } from './mediasoup.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class GetRtpParametersDto {
   @IsIn(['audio', 'video'])
@@ -33,5 +34,6 @@ export class ConsumeDto {
 
 export class ResumeDto { 
   @IsString()
+  @ApiProperty()
   consumerId: string 
 }
