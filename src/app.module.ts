@@ -1,18 +1,20 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
+import { EventModule } from './modules/event.module';
+import { VideoSourceModule } from './modules/video_source.module';
+import { WebsocketMediasoupModule } from './modules/websocket_mediasoup.module';
+import { PrismaModule } from './modules/prisma.module';
 import { AppService } from './app.service';
-import { VideoSourceController } from './controllers/video_source.controller';
-import { EventController } from './controllers/event.controller';
-import { WebsocketGateway } from './gateways/websocket.gateway';
-import { VideoSourceService } from './services/video_source.service';
-import { PrismaService } from './services/prisma.service';
-import { EventService } from './services/event.service';
-import { MediasoupService } from './services/mediasoup.service';
+import { AppController } from './app.controller';
 
 
 @Module({
-  // imports: [WebsocketModule, PrismaModule],
-  controllers: [AppController, VideoSourceController, EventController],
-  providers: [AppService, WebsocketGateway, VideoSourceService, PrismaService, EventService, MediasoupService],
+  imports: [
+    EventModule, 
+    VideoSourceModule,
+    WebsocketMediasoupModule,
+    PrismaModule,
+  ],
+  controllers: [AppController],
+  providers: [ AppService ]
 })
 export class AppModule {}

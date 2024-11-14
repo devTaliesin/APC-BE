@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsIn, ValidateNested } from 'class-validator';
-import { types } from 'mediasoup';
-import { DtlsParametersDto, RtpParametersDto } from './mediasoup.dto';
+import { IsIn, IsString, ValidateNested } from 'class-validator';
+import { DtlsParametersDto, RtpCapabilitiesDto, RtpParametersDto } from './mediasoup.dto';
 
 export class GetRtpParametersDto {
   @IsIn(['audio', 'video'])
@@ -23,3 +22,16 @@ export class ConnectWebRtcTransportDto{
   dtlsParameters: DtlsParametersDto;
 }
 
+export class ConsumeDto {
+  @IsString()
+  producerId: string; 
+
+  @ValidateNested()
+  @Type(() => RtpParametersDto)
+  rtpCapabilities: RtpCapabilitiesDto;
+}
+
+export class ResumeDto { 
+  @IsString()
+  consumerId: string 
+}

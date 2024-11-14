@@ -1,10 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import {types} from 'mediasoup';
-
 import { MediasoupService } from 'src/services/mediasoup.service';
-import { ConnectWebRtcTransportDto, GetRtpParametersDto, StartProduceDto } from 'src/dto/websocket.dto';
+import { ConnectWebRtcTransportDto, ConsumeDto, GetRtpParametersDto, ResumeDto, StartProduceDto } from 'src/dto/websocket.dto';
+import { ApiOperation } from '@nestjs/swagger';
 
 @WebSocketGateway(parseInt(process.env.RUN_PORT), {
   namespace: 'websocket',
@@ -101,7 +100,7 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
   @SubscribeMessage('consume')
   async consume(
     client: Socket,
-    data: { producerId: string; rtpCapabilities: types.RtpCapabilities },
+    data: ConsumeDto,
   ) {
     const clientId = this.clientIds.get(client.id);
     try {
@@ -121,8 +120,8 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
 
   @SubscribeMessage('resume')
   async resume(
-    data: { consumerId: string},
     client: Socket,
+    data: ResumeDto,
   ) {
     const consumer = this.mediasoupService.getConsumer({clientId: client.id, consumerId: data.consumerId})
     await consumer.resume();
