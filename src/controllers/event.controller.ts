@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Res, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, Query, ParseIntPipe, Patch } from '@nestjs/common';
 import { ApiBody } from '@nestjs/swagger';
 import { Response } from 'express';
 import { CreateEventDto } from 'src/dto/create/create-event.dto';
@@ -23,7 +23,7 @@ export class EventController {
     return {data: createdData};
   }
 
-  @Post('update')
+  @Patch('update')
   @ApiBody({ 
     type: UpdateEventDto,
   })

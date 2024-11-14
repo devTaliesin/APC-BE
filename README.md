@@ -1,6 +1,9 @@
 ## devBranch
 - feature/tttaliesin
 
+## swagger
+- /api
+
 ## Project setup
 
 ```bash
