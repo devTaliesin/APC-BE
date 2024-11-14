@@ -1,22 +1,23 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as mediasoup from 'mediasoup';
+import {types, createWorker} from 'mediasoup';
+import { ConnectWebRtcTransportData, CreateConsumerData, CreateProducerData, GetConsumerData, ProducerId } from 'src/intserfaces/mediasoup.interface';
 
 @Injectable()
 export class MediasoupService implements OnModuleInit
 {
-  private worker: mediasoup.types.Worker;
-  public router: mediasoup.types.Router;
+  private worker: types.Worker;
+  public router: types.Router;
 
   public transports: Map<string, {
-    plainRtpTransport?: mediasoup.types.PlainTransport,
-    webRtcTransport?: mediasoup.types.WebRtcTransport,
+    plainRtpTransport?: types.PlainTransport,
+    webRtcTransport?: types.WebRtcTransport,
   }> = new Map();
 
-  private producers: Map<string, mediasoup.types.Producer[]> = new Map()
-  private consumers: Map<string, mediasoup.types.Consumer[]> = new Map()
+  private producers: Map<string, types.Producer[]> = new Map()
+  private consumers: Map<string, types.Consumer[]> = new Map()
 
   async onModuleInit() {
-      this.worker = await mediasoup.createWorker({
+      this.worker = await createWorker({
         rtcMinPort: 40000,
         rtcMaxPort: 40100,
       });
@@ -41,7 +42,7 @@ export class MediasoupService implements OnModuleInit
   }
 
   // GStreamer에서 스트림을 받아오기 위한 mediasoup Setting
-  async createPlainTransport(clientId: string) {
+  async createPlainTransport(clientId: string): Promise<types.PlainTransport<types.AppData>> {
     const transport = await this.router.createPlainTransport({
       listenIp: { ip: '0.0.0.0', announcedIp: '119.198.112.80' }, // 실제 퍼블릭 IP로 변경
       rtcpMux: false,
@@ -54,10 +55,10 @@ export class MediasoupService implements OnModuleInit
     return transport;
   }
 
-  createRtpParameters(kind: mediasoup.types.MediaKind): mediasoup.types.RtpParameters {
+  createRtpParameters(kind: types.MediaKind): types.RtpParameters {
     const ssrc = Math.floor(Math.random() * 0xffffffff);
 
-    const rtpParameters: mediasoup.types.RtpParameters = {
+    const rtpParameters: types.RtpParameters = {
       codecs: [
         {
           mimeType: kind === 'video' ? 'video/H264' : 'audio/opus',
@@ -80,26 +81,22 @@ export class MediasoupService implements OnModuleInit
     return rtpParameters;
   }
 
-  async createProducer(
-    clientId: string, 
-    kind: mediasoup.types.MediaKind, 
-    rtpParameters: mediasoup.types.RtpParameters
-  ) {
-    const transport = this.transports.get(clientId)?.plainRtpTransport;
+  async createProducer(data : CreateProducerData): Promise<types.Producer<types.AppData>> {
+    const transport = this.transports.get(data.clientId)?.plainRtpTransport;
 
     if (!transport) {
-      throw new Error(`Transport를 찾을 수 없습니다: ${clientId}`);
+      throw new Error(`Transport를 찾을 수 없습니다: ${data.clientId}`);
     }
 
     const producer = await transport.produce({
-      kind,
-      rtpParameters,
+      kind: data.kind,
+      rtpParameters: data.rtpParameters,
     });
 
     // 클라이언트별 Producer 저장
-    let clientProducers = this.producers.get(clientId) || [];
+    let clientProducers = this.producers.get(data.clientId) || [];
     clientProducers.push(producer);
-    this.producers.set(clientId, clientProducers);
+    this.producers.set(data.clientId, clientProducers);
 
     return producer;
   }
@@ -121,50 +118,43 @@ export class MediasoupService implements OnModuleInit
     return transport;
   }
 
-  async connectWebRtcTransport(
-    clientId: string, 
-    dtlsParameters: mediasoup.types.DtlsParameters
-  ) {
-    const transport = this.transports.get(clientId)?.webRtcTransport;
+  async connectWebRtcTransport(data: ConnectWebRtcTransportData) {
+    const transport = this.transports.get(data.clientId)?.webRtcTransport;
 
     if (!transport) {
-      throw new Error(`WebRtcTransport를 찾을 수 없습니다: ${clientId}`);
+      throw new Error(`WebRtcTransport를 찾을 수 없습니다: ${data.clientId}`);
     }
 
-    await transport.connect({ dtlsParameters });
+    await transport.connect({ dtlsParameters: data.dtlsParameters });
   }
 
-  async createConsumer(
-    clientId: string,
-    producerId: string,
-    rtpCapabilities: mediasoup.types.RtpCapabilities,
-  ){
-    const transport = this.transports.get(clientId)?.webRtcTransport;
-    const producer = this.findProducerById(producerId);
+  async createConsumer(data: CreateConsumerData): Promise<types.Consumer<types.AppData>> {
+    const transport = this.transports.get(data.clientId)?.webRtcTransport;
+    const producer = this.findProducerById(data.producerId);
 
     if (!transport || !producer) {
-      throw new Error(`Transport 또는 Producer를 찾을 수 없습니다: ${clientId}`);
+      throw new Error(`Transport 또는 Producer를 찾을 수 없습니다: ${data.clientId}`);
     }
 
-    if (!this.router.canConsume({ producerId: producer.id, rtpCapabilities })) {
+    if (!this.router.canConsume({ producerId: producer.id, rtpCapabilities: data.rtpCapabilities })) {
       throw new Error('해당 Producer를 Consume할 수 없습니다.');
     }
 
     const consumer = await transport.consume({
       producerId: producer.id,
-      rtpCapabilities,
+      rtpCapabilities: data.rtpCapabilities,
       paused: true,
     });
 
     // 클라이언트별 Consumer 저장
-    let clientConsumers = this.consumers.get(clientId) || [];
+    let clientConsumers = this.consumers.get(data.clientId) || [];
     clientConsumers.push(consumer);
-    this.consumers.set(clientId, clientConsumers);
+    this.consumers.set(data.clientId, clientConsumers);
 
     return consumer;
   }
 
-  findProducerById(producerId: string): mediasoup.types.Producer {
+  findProducerById(producerId: string): types.Producer {
     for (const producers of this.producers.values()) {
       const producer = producers.find(p => p.id === producerId);
       if (producer) {
@@ -174,8 +164,8 @@ export class MediasoupService implements OnModuleInit
     return null;
   }
 
-  getAllProducerIds(){
-    const producerIds = [];
+  getAllProducerIds(): ProducerId[] {
+    const producerIds: ProducerId[] = [];
     for (const producers of this.producers.values()) {
       for (const producer of producers) {
         producerIds.push({ producerId: producer.id, kind: producer.kind });
@@ -184,8 +174,19 @@ export class MediasoupService implements OnModuleInit
     return producerIds;
   }
 
+  getConsumer(data: GetConsumerData): types.Consumer<types.AppData>{
+    const clientConsumers = this.consumers.get(data.clientId);
+    const consumer = clientConsumers.find(c => c.id === data.consumerId);
+
+    if (!consumer) {
+      console.error('Consumer not found:', data.consumerId);
+      return;
+    }
+    return consumer
+  }
+
   // 기본 Setting
-  closeClientResources(clientId: string){
+  closeClientResources(clientId: string) {
     const clientProducers = this.producers.get(clientId);
     if (clientProducers) {
       clientProducers.forEach(producer => producer.close());

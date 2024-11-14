@@ -1,10 +1,11 @@
 import { Logger } from '@nestjs/common';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { PrismaService } from '../prisma/prisma.service';
+import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { MediasoupService } from 'src/mediasoup/mediasoup.service';
 import {types} from 'mediasoup';
-import { DtlsParameters } from 'mediasoup/node/lib/fbs/web-rtc-transport';
+
+import { MediasoupService } from 'src/services/mediasoup.service';
+import { ConnectWebRtcTransportDto, GetRtpParametersDto, StartProduceDto } from 'src/dto/websocket.dto';
+
 @WebSocketGateway(parseInt(process.env.RUN_PORT), {
   namespace: 'websocket',
   cors: {
@@ -20,7 +21,6 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
   @WebSocketServer() server: Server
 
   constructor(
-    private readonly prismaService: PrismaService,
     private mediasoupService: MediasoupService
   ) {}
 
@@ -39,8 +39,8 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
 
   @SubscribeMessage('getRtpParameters')
   async getRtpParameters(
-    @MessageBody() data: { kind: types.MediaKind },
-    @ConnectedSocket() client: Socket,
+    client: Socket,
+    data: GetRtpParametersDto,
   ) {
     const rtpParameters = this.mediasoupService.createRtpParameters(data.kind);
     client.emit('plainTransportCreated', {
@@ -52,10 +52,10 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
   @SubscribeMessage('startProduce')
   async startProduce(
     client: Socket,
-    data: {kind: types.MediaKind, rtpParameters: types.RtpParameters}
+    data: StartProduceDto
   ) {
     const clientId = this.clientIds.get(client.id);
-    const producer = await this.mediasoupService.createProducer(clientId, data.kind, data.rtpParameters)
+    const producer = await this.mediasoupService.createProducer({clientId, kind: data.kind, rtpParameters: data.rtpParameters})
     client.emit('producerCreated', {id: producer.id, kind: data.kind})
   }
 
@@ -87,11 +87,11 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
   @SubscribeMessage('connectWebRtcTransport')
   async connectWebRtcTransport(
     client: Socket,
-    data: {dtlsParameters: types.DtlsParameters},
+    data: ConnectWebRtcTransportDto,
   ) {
     try{
       const clientId = this.clientIds.get(client.id);
-      await this.mediasoupService.connectWebRtcTransport(clientId, data.dtlsParameters);
+      await this.mediasoupService.connectWebRtcTransport({clientId, dtlsParameters: data.dtlsParameters});
       client.emit('webRtcTransportConnected')
     } catch (error){
       this.logger.error(`WebRtc Transport Connect Fail: ${error}`)
@@ -105,7 +105,7 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
   ) {
     const clientId = this.clientIds.get(client.id);
     try {
-      const consumer = await this.mediasoupService.createConsumer(clientId, data.producerId, data.rtpCapabilities)
+      const consumer = await this.mediasoupService.createConsumer({clientId, producerId: data.producerId, rtpCapabilities: data.rtpCapabilities})
       client.emit('consumed', {
         producerid: data.producerId,
         id: consumer.id,
@@ -121,10 +121,12 @@ implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect{
 
   @SubscribeMessage('resume')
   async resume(
-    @MessageBody() data: { producerId: string; rtpCapabilities: types.RtpCapabilities },
-    @ConnectedSocket() client: Socket,
+    data: { consumerId: string},
+    client: Socket,
   ) {
-    client.emit('consumerResumed')
+    const consumer = this.mediasoupService.getConsumer({clientId: client.id, consumerId: data.consumerId})
+    await consumer.resume();
+    client.emit('consumerResumed', { consumerId: consumer.id });
   }
 
   //기본 event

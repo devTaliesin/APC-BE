@@ -11,9 +11,8 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true
   }
-  
+
   app.enableCors(corsOptions)
-  // app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.listen(process.env.RUN_PORT ?? 3000);
 }
