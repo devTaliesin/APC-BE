@@ -5,8 +5,4 @@ export class ConnectVideoSourceDto {
   @IsNumber()
   @ApiProperty()
   id: number;
-
-  @IsString()
-  @ApiProperty()
-  onvif?: string;
 }

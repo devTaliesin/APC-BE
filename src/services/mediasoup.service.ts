@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import {types, createWorker} from 'mediasoup';
-import { ConnectWebRtcTransportData, CreateConsumerData, CreateProducerData, GetConsumerData, ProducerId } from 'src/intserfaces/mediasoup.interface';
+import { ConnectWebRtcTransportData, CreateConsumerData, CreateProducerData, GetConsumerData, ProducerId } from 'src/interfaces/mediasoup.interface';
 
 @Injectable()
 export class MediasoupService implements OnModuleInit

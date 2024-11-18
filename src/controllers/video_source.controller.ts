@@ -11,7 +11,7 @@ import { Response } from 'express';
 import { CreateVideoSourceDto } from 'src/dto/create/create-videoSource.dto';
 import { DeleteVideoSourceDto } from 'src/dto/delete/delete-videoSource';
 import { UpdateVideoSourceDto } from 'src/dto/update/update-videoSource.dto';
-import { VideoSourceDto } from 'src/dto/videoSource.dto';
+import { VideoSource } from 'src/entities/videoSource.entity';
 import { VideoSourceService } from 'src/services/video_source.service';
 
 @Controller('video_source')
@@ -21,14 +21,14 @@ export class VideoSourceController {
   @Post('create')
   async connectToDevice(
     @Body() createVideoSourceDto: CreateVideoSourceDto,
-  ): Promise<{ data: VideoSourceDto }> {
+  ): Promise<{ data: VideoSource }> {
     const createdVideoSource =
       await this.videoSourceService.createVideoSource(createVideoSourceDto);
     return { data: createdVideoSource };
   }
 
   @Get('read')
-  async readBVideoSource(): Promise<{ data: VideoSourceDto[] }> {
+  async readBVideoSource(): Promise<{ data: VideoSource[] }> {
     const videoSourceInfo = await this.videoSourceService.readVideoSource();
     return { data: videoSourceInfo };
   }
@@ -36,7 +36,7 @@ export class VideoSourceController {
   @Patch('update')
   async updateVideoSource(
     @Body() updateVideoSourceDto: UpdateVideoSourceDto,
-  ): Promise<{ data: VideoSourceDto }> {
+  ): Promise<{ data: VideoSource }> {
     const updatedVideoSource =
       await this.videoSourceService.updateVideoSource(updateVideoSourceDto);
     return { data: updatedVideoSource };

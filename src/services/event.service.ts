@@ -4,9 +4,9 @@ import { subDays } from "date-fns";
 import { CreateEventDto } from "src/dto/create/create-event.dto";
 import { UpdateEventDto } from "src/dto/update/update-event.dto";
 import { Subject } from "rxjs";
-import { EventDto } from "src/dto/event.dto";
 import { handleDatabaseException } from "src/exceptions/database.exception";
-import { EventSseSubjectInterface } from "src/intserfaces/event.interface";
+import { Event } from "src/entities/event.entity";
+import { EventSseSubjectInterface } from "src/interfaces/event.interface";
 
 @Injectable()
 export class EventService {
@@ -17,7 +17,7 @@ export class EventService {
   private EventEvents$ = new Subject<EventSseSubjectInterface>();
   private readonly logger = new Logger(EventService.name);
 
-  async createEventData(createEventDto: CreateEventDto): Promise<EventDto> {
+  async createEventData(createEventDto: CreateEventDto): Promise<Event> {
     try {
       const createdData = await this.prisma.event.create({
         data: {
@@ -34,7 +34,7 @@ export class EventService {
     } 
   }
 
-  async readDailyVideoEventData(videoId:number): Promise<EventDto[]>{
+  async readDailyVideoEventData(videoId:number): Promise<Event[]>{
     const oneDayAgo = subDays(new Date(), 1);
     try {
       const readEvent = await this.prisma.event.findMany({
@@ -52,7 +52,7 @@ export class EventService {
     }
   }
 
-  async readDailyFaceIdEventData(faceId:number): Promise<EventDto[]> {
+  async readDailyFaceIdEventData(faceId:number): Promise<Event[]> {
     const oneDayAgo = subDays(new Date(), 1);
     try {
       const readEvent = await this.prisma.event.findMany({
@@ -70,7 +70,7 @@ export class EventService {
     }
   }
 
-  async updateEventData(updateEventDto: UpdateEventDto): Promise<EventDto> {
+  async updateEventData(updateEventDto: UpdateEventDto): Promise<Event> {
     try {
       const updatedData = await this.prisma.event.update({
         where: {

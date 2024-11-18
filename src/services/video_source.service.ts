@@ -6,22 +6,22 @@ import {
   OnvifAuthenticationException,
   OnvifConnectionException,
 } from 'src/exceptions/video_source.exception';
-import { VideoSourceDto } from 'src/dto/videoSource.dto';
 import { Subject } from 'rxjs';
 import { handleDatabaseException } from 'src/exceptions/database.exception';
 import { UpdateVideoSourceDto } from 'src/dto/update/update-videoSource.dto';
 import { DeleteVideoSourceDto } from 'src/dto/delete/delete-videoSource';
+import { VideoSource } from 'src/entities/videoSource.entity';
 
 @Injectable()
 export class VideoSourceService {
   constructor(private prisma: PrismaService) {}
 
-  private videoSourceEvents$ = new Subject<VideoSourceDto[]>();
+  private videoSourceEvents$ = new Subject<VideoSource[]>();
   private readonly logger = new Logger(VideoSourceService.name);
 
   async createVideoSource(
     createVideoSourceDto: CreateVideoSourceDto,
-  ): Promise<VideoSourceDto> {
+  ): Promise<VideoSource> {
     const device = new OnvifDevice({
       xaddr: `http://${createVideoSourceDto.onvif}/onvif/device_service`, // ONVIF 장치의 서비스 주소
       user: createVideoSourceDto.user,
@@ -64,7 +64,7 @@ export class VideoSourceService {
     }
   }
 
-  async readVideoSource(): Promise<VideoSourceDto[]> {
+  async readVideoSource(): Promise<VideoSource[]> {
     try {
       const videoSourceInfo = await this.prisma.videoSource.findMany();
       return videoSourceInfo;
@@ -75,7 +75,7 @@ export class VideoSourceService {
 
   async updateVideoSource(
     updateVideoSourceDto: UpdateVideoSourceDto,
-  ): Promise<VideoSourceDto> {
+  ): Promise<VideoSource> {
     try {
       const { id, ...fieldsToUpdate } = updateVideoSourceDto;
       const data = Object.fromEntries(
@@ -109,7 +109,7 @@ export class VideoSourceService {
     return this.videoSourceEvents$.asObservable();
   }
 
-  emitEvent(allDevice: VideoSourceDto[]) {
+  emitEvent(allDevice: VideoSource[]) {
     this.videoSourceEvents$.next(allDevice);
   }
 }
